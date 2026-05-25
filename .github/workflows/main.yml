@@ -10,26 +10,45 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '17'
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
 
-    - name: Download JMeter
-      run: |
-        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
-        tar -xvzf apache-jmeter-5.6.3.tgz
+      - name: Download JMeter
+        run: |
+          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xvzf apache-jmeter-5.6.3.tgz
 
-    - name: Run JMeter Test (Non-GUI)
-      run: |
-        apache-jmeter-5.6.3/bin/jmeter -n -t "Project 4.jmx" -l results.jtl -e -o html-report
+      - name: Run JMeter Test (Non-GUI)
+        run: |
+          apache-jmeter-5.6.3/bin/jmeter -n -t "Project 4.jmx" -l results.jtl -e -o html-report
 
-    - name: Upload HTML Report
-      uses: actions/upload-artifact@v4
-      with:
-        name: jmeter-html-report
-        path: html-report
+      - name: Check Performance Gate
+        run: |
+          total=$(grep -c "," results.jtl)
+          errors=$(grep ",false," results.jtl | wc -l)
+
+          echo "Total Samples: $total"
+          echo "Error Samples: $errors"
+
+          error_rate=$((errors * 100 / total))
+
+          echo "Error Rate: $error_rate%"
+
+          if [ $error_rate -gt 2 ]; then
+            echo "Performance Gate Failed "
+            exit 1
+          else
+            echo "Performance Gate Passed "
+          fi
+
+      - name: Upload HTML Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jmeter-html-report
+          path: html-report
