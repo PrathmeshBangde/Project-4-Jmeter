@@ -1,0 +1,35 @@
+name: JMeter CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  jmeter-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
+    - name: Download JMeter
+      run: |
+        wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+        tar -xvzf apache-jmeter-5.6.3.tgz
+
+    - name: Run JMeter Test (Non-GUI)
+      run: |
+        apache-jmeter-5.6.3/bin/jmeter -n -t "Project 4.jmx" -l results.jtl -e -o html-report
+
+    - name: Upload HTML Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: jmeter-html-report
+        path: html-report
